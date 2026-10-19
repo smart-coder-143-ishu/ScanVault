@@ -120,25 +120,27 @@ fun GeneratorScreen() {
     }
 
     Scaffold(
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, top = 8.dp, bottom = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = Icons.Default.Wand2, 
-                contentDescription = null, 
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(24.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = "Code Generator", 
-                fontWeight = FontWeight.ExtraBold, 
-                fontSize = 22.sp,
-                color = MaterialTheme.colorScheme.primary
-            )
+        topBar = {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, top = 8.dp, bottom = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.AutoFixHigh, // Wand2 ki jagah Android ka icon
+                    contentDescription = null, 
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Code Generator", 
+                    fontWeight = FontWeight.ExtraBold, 
+                    fontSize = 22.sp,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
         }
     ) { innerPadding ->
         Column(
