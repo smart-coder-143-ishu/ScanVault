@@ -221,6 +221,76 @@ fun ScannerScreen(
                 )
             }
 
+            // Premium Viewfinder Border (Reticle)
+            Box(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .size(260.dp)
+                    .border(2.dp, Color(0xFF14B8A6), RoundedCornerShape(24.dp))
+                    .background(Color.Transparent)
+            )
+
+            // Simulator Test Presets (Bottom Sheet Style)
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .padding(bottom = 90.dp) // Gallery button ke theek upar
+                    .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+                    .padding(16.dp)
+            ) {
+                Text(
+                    text = "SIMULATOR TEST PRESETS",
+                    color = Color.Gray,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        onClick = { 
+                            coroutineScope.launch {
+                                val id = scanRepository.saveScan("https://google.com", BarcodeFormatType.QR_CODE)
+                                navController.navigate(Screen.ScanResult.createRoute(id))
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0369A1)),
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(8.dp),
+                        contentPadding = PaddingValues(0.dp)
+                    ) { Text("Valid HTTPS", fontSize = 10.sp) }
+
+                    Button(
+                        onClick = { 
+                            coroutineScope.launch {
+                                val id = scanRepository.saveScan("http://paypal-login-update.com", BarcodeFormatType.QR_CODE)
+                                navController.navigate(Screen.ScanResult.createRoute(id))
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF9F1239)),
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(8.dp),
+                        contentPadding = PaddingValues(0.dp)
+                    ) { Text("Phishing Alert", fontSize = 10.sp) }
+
+                    Button(
+                        onClick = { 
+                            coroutineScope.launch {
+                                val id = scanRepository.saveScan("WIFI:S:MyNetwork;T:WPA;P:Password123;;", BarcodeFormatType.QR_CODE)
+                                navController.navigate(Screen.ScanResult.createRoute(id))
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF065F46)),
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(8.dp),
+                        contentPadding = PaddingValues(0.dp)
+                    ) { Text("Wi-Fi Payload", fontSize = 10.sp) }
+                }
+            }
+
             // Top Header Overlay
             Row(
                 modifier = Modifier
