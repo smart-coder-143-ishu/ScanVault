@@ -100,29 +100,31 @@ fun HistoryScreen(
     }
 
     Scaffold(
-        // Premium Sleek Top Bar (Extra space removed)
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, top = 8.dp, bottom = 12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "Scan History", 
-                fontWeight = FontWeight.ExtraBold, 
-                fontSize = 22.sp, 
-                color = MaterialTheme.colorScheme.primary
-            )
-            
-            // Action Icons
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                if (allScans.isNotEmpty()) {
-                    IconButton(onClick = { /* CSV Export Code */ }) {
-                        Icon(imageVector = Icons.Default.FileDownload, contentDescription = "Export CSV", tint = MaterialTheme.colorScheme.onSurface)
-                    }
-                    IconButton(onClick = { showClearConfirmDialog = true }) {
-                        Icon(imageVector = Icons.Default.DeleteSweep, contentDescription = "Clear History", tint = MaterialTheme.colorScheme.onSurface)
+        topBar = {
+            // Premium Sleek Top Bar
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, top = 8.dp, bottom = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Scan History", 
+                    fontWeight = FontWeight.ExtraBold, 
+                    fontSize = 22.sp, 
+                    color = MaterialTheme.colorScheme.primary
+                )
+                
+                // Action Icons
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (allScans.isNotEmpty()) {
+                        IconButton(onClick = { /* CSV Export Code will remain here */ }) {
+                            Icon(imageVector = Icons.Default.FileDownload, contentDescription = "Export CSV", tint = MaterialTheme.colorScheme.onSurface)
+                        }
+                        IconButton(onClick = { showClearConfirmDialog = true }) {
+                            Icon(imageVector = Icons.Default.DeleteSweep, contentDescription = "Clear History", tint = MaterialTheme.colorScheme.onSurface)
+                        }
                     }
                 }
             }
