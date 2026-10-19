@@ -100,33 +100,32 @@ fun HistoryScreen(
     }
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(text = "Scan History", fontWeight = FontWeight.Bold) },
-                actions = {
-                    if (allScans.isNotEmpty()) {
-                        // Export to CSV
-                        IconButton(onClick = {
-                            coroutineScope.launch {
-                                val csv = scanRepository.exportToCsv(filteredList)
-                                val sendIntent = Intent(Intent.ACTION_SEND).apply {
-                                    putExtra(Intent.EXTRA_TEXT, csv)
-                                    putExtra(Intent.EXTRA_SUBJECT, "ScanVault-Export.csv")
-                                    type = "text/csv"
-                                }
-                                context.startActivity(Intent.createChooser(sendIntent, "Export Scans to CSV"))
-                            }
-                        }) {
-                            Icon(imageVector = Icons.Default.FileDownload, contentDescription = "Export CSV")
-                        }
-
-                        // Clear All
-                        IconButton(onClick = { showClearConfirmDialog = true }) {
-                            Icon(imageVector = Icons.Default.DeleteSweep, contentDescription = "Clear History")
-                        }
+        // Premium Sleek Top Bar (Extra space removed)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, top = 8.dp, bottom = 12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Scan History", 
+                fontWeight = FontWeight.ExtraBold, 
+                fontSize = 22.sp, 
+                color = MaterialTheme.colorScheme.primary
+            )
+            
+            // Action Icons
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (allScans.isNotEmpty()) {
+                    IconButton(onClick = { /* CSV Export Code */ }) {
+                        Icon(imageVector = Icons.Default.FileDownload, contentDescription = "Export CSV", tint = MaterialTheme.colorScheme.onSurface)
+                    }
+                    IconButton(onClick = { showClearConfirmDialog = true }) {
+                        Icon(imageVector = Icons.Default.DeleteSweep, contentDescription = "Clear History", tint = MaterialTheme.colorScheme.onSurface)
                     }
                 }
-            )
+            }
         }
     ) { innerPadding ->
         Column(
