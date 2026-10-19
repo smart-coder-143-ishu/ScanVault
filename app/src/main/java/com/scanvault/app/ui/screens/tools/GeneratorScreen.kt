@@ -124,7 +124,7 @@ fun GeneratorScreen() {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, top = 8.dp, bottom = 12.dp),
+                    .padding(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
