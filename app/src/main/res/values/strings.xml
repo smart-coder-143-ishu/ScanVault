@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">ScanVault</string>
+    <string name="tagline">Smart QR &amp; Barcode Scanner</string>
+    <string name="camera_permission_required">Camera permission is required to scan QR codes and barcodes.</string>
+    <string name="grant_permission">Grant Permission</string>
+    <string name="open_settings">Open Settings</string>
+</resources>
