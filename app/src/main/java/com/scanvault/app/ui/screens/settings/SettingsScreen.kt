@@ -58,26 +58,28 @@ fun SettingsScreen(
     }
 
     Scaffold(
-        // Premium Sleek Top Bar for Settings
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 4.dp, top = 8.dp, bottom = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = { navController.popBackStack() }) {
-                Icon(
-                    imageVector = Icons.Default.ArrowBack, 
-                    contentDescription = "Back",
-                    tint = MaterialTheme.colorScheme.onSurface
+        topBar = {
+            // Premium Sleek Top Bar for Settings
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 4.dp, top = 8.dp, bottom = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = { navController.popBackStack() }) {
+                    Icon(
+                        imageVector = Icons.Default.ArrowBack, 
+                        contentDescription = "Back",
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+                Text(
+                    text = "Settings & Privacy", 
+                    fontWeight = FontWeight.ExtraBold, 
+                    fontSize = 22.sp,
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
-            Text(
-                text = "Settings & Privacy", 
-                fontWeight = FontWeight.ExtraBold, 
-                fontSize = 22.sp,
-                color = MaterialTheme.colorScheme.primary
-            )
         }
     ) { innerPadding ->
         Column(
