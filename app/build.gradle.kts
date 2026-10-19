@@ -82,6 +82,11 @@ dependencies {
     val composeBom = platform("androidx.compose:compose-bom:2024.04.01")
     implementation(composeBom)
     androidTestImplementation(composeBom)
+    
+    implementation("androidx.compose.runtime:runtime")
+    implementation("androidx.compose.foundation:foundation")
+    implementation("com.google.guava:guava:32.1.3-android")
+
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
