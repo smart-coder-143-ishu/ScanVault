@@ -63,7 +63,7 @@ fun SettingsScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 4.dp, top = 8.dp, bottom = 12.dp),
+                    .padding(start = 4.dp, top = 8.dp, end = 4.dp, bottom = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = { navController.popBackStack() }) {
