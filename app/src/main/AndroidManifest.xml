@@ -20,7 +20,6 @@
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         
-        <!-- YAHAN CHANGES KIYE GAYE HAIN: Ab ye aapke custom logo ko point kar raha hai -->
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
         
