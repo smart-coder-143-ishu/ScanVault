@@ -1,5 +1,8 @@
 package com.scanvault.app.ui.screens.settings
 
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -12,20 +15,26 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.scanvault.app.data.repository.ScanRepository
+import com.scanvault.app.data.repository.ProductLookupRepository
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     navController: NavController,
-    scanRepository: ScanRepository
+    scanRepository: ScanRepository,
+    productRepository: ProductLookupRepository // Naya Repository
 ) {
+    val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+    
+    // Purane sabhi states
     var vibrateOnScan by remember { mutableStateOf(true) }
     var soundOnScan by remember { mutableStateOf(true) }
     var autoCopyScannedText by remember { mutableStateOf(false) }
@@ -33,6 +42,21 @@ fun SettingsScreen(
     var showClearDialog by remember { mutableStateOf(false) }
 
     val totalScans by scanRepository.totalCount.collectAsState(initial = 0)
+
+    // CSV File Import Launcher
+    val csvLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) {
+            Toast.makeText(context, "Importing inventory...", Toast.LENGTH_SHORT).show()
+            coroutineScope.launch {
+                val result = productRepository.importCsvToInventory(context, uri)
+                result.onSuccess { count ->
+                    Toast.makeText(context, "Successfully imported $count products!", Toast.LENGTH_LONG).show()
+                }.onFailure {
+                    Toast.makeText(context, "Failed to import CSV file.", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
 
     if (showClearDialog) {
         AlertDialog(
@@ -91,7 +115,42 @@ fun SettingsScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
-            // Scanner Preferences
+            
+            // 1. --- INVENTORY MANAGEMENT SECTION (Naya) ---
+            Text(
+                text = "Inventory Management",
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                border = CardDefaults.outlinedCardBorder()
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "Import products via CSV file. When a barcode is scanned, your local inventory will be checked instantly even without internet.",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        lineHeight = 18.sp
+                    )
+                    Spacer(modifier = Modifier.height(14.dp))
+                    Button(
+                        onClick = { csvLauncher.launch("text/*") }, // Open File Picker
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Icon(Icons.Default.UploadFile, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Import Products from CSV", fontSize = 12.sp)
+                    }
+                }
+            }
+
+            // 2. --- SCANNER BEHAVIOR SECTION (Purana Pura Hissa) ---
             Text(
                 text = "Scanner Behavior",
                 fontSize = 13.sp,
@@ -154,7 +213,7 @@ fun SettingsScreen(
                 }
             }
 
-            // Privacy & Data Sovereignty
+            // 3. --- PRIVACY & DATA SECTION ---
             Text(
                 text = "Privacy & Local Storage",
                 fontSize = 13.sp,
@@ -204,7 +263,7 @@ fun SettingsScreen(
                 }
             }
 
-            // Application About & Version
+            // 4. --- APPLICATION ABOUT & VERSION (Restore kiya gaya) ---
             Text(
                 text = "About",
                 fontSize = 13.sp,
