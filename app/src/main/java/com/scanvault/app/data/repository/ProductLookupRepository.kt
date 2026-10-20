@@ -120,4 +120,12 @@ class ProductLookupRepository(private val inventoryDao: InventoryDao) {
             Result.failure(e)
         }
     }
+    
+    suspend fun getAllLocalInventory(): List<InventoryEntity> = withContext(Dispatchers.IO) {
+        inventoryDao.getAllItems()
+    }
+
+    suspend fun deleteFromInventory(barcode: String) = withContext(Dispatchers.IO) {
+        inventoryDao.deleteItemByBarcode(barcode)
+    }
 }
