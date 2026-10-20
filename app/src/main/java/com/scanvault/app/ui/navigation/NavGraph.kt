@@ -68,22 +68,43 @@ fun ScanVaultNavHost(
             modifier = Modifier.padding(innerPadding)
         ) {
             composable(Screen.Home.route) {
-                HomeScreen(navController = navController, scanRepository = scanRepository)
+                HomeScreen(
+                    navController = navController, 
+                    scanRepository = scanRepository
+                )
             }
             composable(Screen.Scanner.route) {
-                ScannerScreen(navController = navController, scanRepository = scanRepository)
+                ScannerScreen(
+                    navController = navController, 
+                    scanRepository = scanRepository
+                )
             }
             composable(Screen.History.route) {
-                HistoryScreen(navController = navController, scanRepository = scanRepository)
+                HistoryScreen(
+                    navController = navController, 
+                    scanRepository = scanRepository)
             }
             composable(Screen.Tools.route) {
                 GeneratorScreen()
             }
             composable(Screen.Settings.route) {
-                SettingsScreen(navController = navController, scanRepository = scanRepository, productRepository = productRepository)
+                SettingsScreen(
+                    navController = navController, 
+                    scanRepository = scanRepository, 
+                    productRepository = productRepository
+                )
+            }
+            composable(Screen.InventoryDashboard.route) {
+                InventoryDashboardScreen(
+                    navController = navController,
+                    productRepository = productRepository
+                )
             }
             composable(Screen.BulkScan.route) {
-                BulkScanScreen(navController = navController, scanRepository = scanRepository)
+                BulkScanScreen(
+                    navController = navController, 
+                    scanRepository = scanRepository
+                )
             }
             composable(
                 route = Screen.ScanResult.route,
