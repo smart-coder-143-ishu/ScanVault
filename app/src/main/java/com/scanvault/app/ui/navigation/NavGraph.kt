@@ -23,6 +23,7 @@ import com.scanvault.app.ui.screens.result.ScanResultScreen
 import com.scanvault.app.ui.screens.scanner.ScannerScreen
 import com.scanvault.app.ui.screens.tools.GeneratorScreen
 import com.scanvault.app.ui.screens.settings.SettingsScreen
+import com.scanvault.app.ui.screens.settings.InventoryDashboardScreen
 
 @Composable
 fun ScanVaultNavHost(
