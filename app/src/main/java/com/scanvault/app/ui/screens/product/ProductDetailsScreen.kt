@@ -1,5 +1,6 @@
 package com.scanvault.app.ui.screens.product
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -11,8 +12,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -79,7 +80,7 @@ fun ProductDetailsScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Barcode Source Banner (explicitly distinguishing raw decoded barcode from external DB)
+            // Barcode Source Banner
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(14.dp),
@@ -136,7 +137,7 @@ fun ProductDetailsScreen(
                         CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                         Spacer(modifier = Modifier.height(12.dp))
                         Text(
-                            text = "Querying Open Food Facts database...",
+                            text = "Querying database...",
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -145,6 +146,8 @@ fun ProductDetailsScreen(
             } else {
                 when (val result = lookupResult) {
                     is ProductLookupResult.Success -> {
+                        val context = LocalContext.current
+                        
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(18.dp),
@@ -197,11 +200,38 @@ fun ProductDetailsScreen(
                                 }
 
                                 ProductMetaRow(label = "Database Source", value = result.sourceDatabase)
+                                
+                                // --- NAYA LOCAL SAVE BUTTON YAHAN HAI ---
+                                if (result.sourceDatabase != "Local Inventory (POS)") {
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                    Button(
+                                        onClick = {
+                                            coroutineScope.launch {
+                                                productRepository.addProductToInventory(
+                                                    barcode = result.barcode,
+                                                    name = result.productName,
+                                                    price = result.price ?: "",
+                                                    category = result.categories ?: "Uncategorized",
+                                                    qty = result.quantity ?: ""
+                                                )
+                                                Toast.makeText(context, "Saved to Local Inventory!", Toast.LENGTH_SHORT).show()
+                                                performLookup() // Refresh to show it as local
+                                            }
+                                        },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(12.dp),
+                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0EA5E9))
+                                    ) {
+                                        Icon(Icons.Default.SaveAlt, contentDescription = null, modifier = Modifier.size(18.dp))
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text("Save Data to Local Database")
+                                    }
+                                }
                             }
                         }
                     }
 
-                        is ProductLookupResult.NotFound -> {
+                    is ProductLookupResult.NotFound -> {
                         var newName by remember { mutableStateOf("") }
                         var newPrice by remember { mutableStateOf("") }
                         var newCategory by remember { mutableStateOf("") }
@@ -233,7 +263,7 @@ fun ProductDetailsScreen(
                                     onClick = {
                                         coroutineScope.launch {
                                             productRepository.addProductToInventory(barcode, newName, newPrice, newCategory, newQty)
-                                            performLookup() // Re-fetch, it will now find it in local DB!
+                                            performLookup() 
                                         }
                                     },
                                     modifier = Modifier.fillMaxWidth(),
