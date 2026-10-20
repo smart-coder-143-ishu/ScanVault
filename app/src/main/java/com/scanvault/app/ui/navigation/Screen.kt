@@ -14,6 +14,7 @@ sealed class Screen(val route: String, val title: String, val icon: ImageVector?
     object History : Screen("history", "History", Icons.Default.History)
     object Tools : Screen("tools", "Tools", Icons.Default.Build)
     object Settings : Screen("settings", "Settings", Icons.Default.Settings)
+    object InventoryDashboard : Screen("inventory_dashboard", "Manage Inventory")
 
     // Sub-screens
     object ScanResult : Screen("result/{recordId}", "Scan Details") {
