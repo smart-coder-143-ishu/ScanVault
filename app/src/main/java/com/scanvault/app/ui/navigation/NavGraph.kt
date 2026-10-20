@@ -83,7 +83,7 @@ fun ScanVaultNavHost(
                 SettingsScreen(navController = navController, scanRepository = scanRepository)
             }
             composable(Screen.BulkScan.route) {
-                BulkScanScreen(navController = navController, scanRepository = scanRepository)
+                BulkScanScreen(navController = navController, scanRepository = scanRepository, productRepository = productRepository)
             }
             composable(
                 route = Screen.ScanResult.route,
