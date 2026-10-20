@@ -1,32 +1,36 @@
 package com.scanvault.app.data.repository
 
+import android.content.Context
+import android.net.Uri
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
+import com.scanvault.app.data.local.InventoryDao
+import com.scanvault.app.data.local.InventoryEntity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import java.io.IOException
+import java.io.BufferedReader
+import java.io.InputStreamReader
 import java.util.concurrent.TimeUnit
 
 sealed class ProductLookupResult {
     data class Success(
         val barcode: String,
         val productName: String,
-        val brand: String?,
-        val categories: String?,
-        val quantity: String?,
-        val imageUrl: String?,
-        val ingredientsSummary: String?,
+        val brand: String? = null,
+        val categories: String? = null,
+        val quantity: String? = null,
+        val price: String? = null, // Naya field local DB ke liye
+        val imageUrl: String? = null,
+        val ingredientsSummary: String? = null,
         val sourceDatabase: String = "Open Food Facts"
     ) : ProductLookupResult()
-
     data class NotFound(val barcode: String) : ProductLookupResult()
     data class Error(val message: String) : ProductLookupResult()
 }
 
-class ProductLookupRepository {
-
+class ProductLookupRepository(private val inventoryDao: InventoryDao) {
     private val client = OkHttpClient.Builder()
         .connectTimeout(6, TimeUnit.SECONDS)
         .readTimeout(8, TimeUnit.SECONDS)
@@ -34,54 +38,86 @@ class ProductLookupRepository {
 
     suspend fun lookupBarcode(barcode: String): ProductLookupResult = withContext(Dispatchers.IO) {
         val trimmed = barcode.trim()
-        val url = "https://world.openfoodfacts.org/api/v2/product/$trimmed.json"
+        
+        // Step 1: Sabse pehle Local Database (Inventory) check karein
+        val localProduct = inventoryDao.getProductByBarcode(trimmed)
+        if (localProduct != null) {
+            return@withContext ProductLookupResult.Success(
+                barcode = trimmed,
+                productName = localProduct.name,
+                price = localProduct.price,
+                categories = localProduct.category,
+                quantity = localProduct.quantity,
+                sourceDatabase = "Local Inventory (POS)"
+            )
+        }
 
-        val request = Request.Builder()
-            .url(url)
-            .header("User-Agent", "ScanVault-AndroidApp/1.0 (scanvault-app@example.com)")
-            .build()
+        // Step 2: Agar local nahi mila, toh API check karein
+        val url = "https://world.openfoodfacts.org/api/v2/product/$trimmed.json"
+        val request = Request.Builder().url(url).header("User-Agent", "ScanVault").build()
 
         try {
             client.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) {
-                    if (response.code == 404) return@withContext ProductLookupResult.NotFound(trimmed)
-                    if (response.code == 429) return@withContext ProductLookupResult.Error("API rate limit reached. Please try again in a few moments.")
-                    return@withContext ProductLookupResult.Error("Server returned code ${response.code}")
+                    return@withContext if (response.code == 404) ProductLookupResult.NotFound(trimmed)
+                    else ProductLookupResult.Error("API rate limit or server error.")
                 }
-
                 val bodyStr = response.body?.string() ?: return@withContext ProductLookupResult.NotFound(trimmed)
                 val root: JsonObject = JsonParser.parseString(bodyStr).asJsonObject
+                if ((root.get("status")?.asInt ?: 0) != 1) return@withContext ProductLookupResult.NotFound(trimmed)
 
-                val status = root.get("status")?.asInt ?: 0
-                if (status != 1) {
-                    return@withContext ProductLookupResult.NotFound(trimmed)
-                }
-
-                val product = root.getAsJsonObject("product") ?: return@withContext ProductLookupResult.NotFound(trimmed)
-
-                val productName = product.get("product_name")?.asString
-                    ?: product.get("product_name_en")?.asString
-                    ?: "Unnamed Item"
-                val brand = product.get("brands")?.asString
-                val categories = product.get("categories")?.asString
-                val quantity = product.get("quantity")?.asString
-                val imageUrl = product.get("image_front_url")?.asString
-                val ingredients = product.get("ingredients_text")?.asString
-
+                val p = root.getAsJsonObject("product") ?: return@withContext ProductLookupResult.NotFound(trimmed)
                 ProductLookupResult.Success(
                     barcode = trimmed,
-                    productName = productName,
-                    brand = brand,
-                    categories = categories,
-                    quantity = quantity,
-                    imageUrl = imageUrl,
-                    ingredientsSummary = ingredients
+                    productName = p.get("product_name")?.asString ?: "Unnamed Item",
+                    brand = p.get("brands")?.asString,
+                    categories = p.get("categories")?.asString,
+                    quantity = p.get("quantity")?.asString,
+                    imageUrl = p.get("image_front_url")?.asString,
+                    ingredientsSummary = p.get("ingredients_text")?.asString
                 )
             }
-        } catch (_: IOException) {
-            ProductLookupResult.Error("Unable to connect to product database. Check network connection.")
         } catch (e: Exception) {
-            ProductLookupResult.Error("Lookup error: ${e.localizedMessage ?: "Unknown"}")
+            ProductLookupResult.Error("Lookup error: ${e.localizedMessage}")
+        }
+    }
+
+    // Function to Add Product Manually
+    suspend fun addProductToInventory(barcode: String, name: String, price: String, category: String, qty: String) {
+        withContext(Dispatchers.IO) {
+            inventoryDao.insertProduct(InventoryEntity(barcode, name, price, category, qty))
+        }
+    }
+
+    // Function to Import CSV Data
+    suspend fun importCsvToInventory(context: Context, uri: Uri): Result<Int> = withContext(Dispatchers.IO) {
+        try {
+            val inputStream = context.contentResolver.openInputStream(uri)
+            val reader = BufferedReader(InputStreamReader(inputStream))
+            val items = mutableListOf<InventoryEntity>()
+            
+            // Skip header line
+            reader.readLine() 
+            
+            reader.forEachLine { line ->
+                val tokens = line.split(",") // Format: Barcode,Name,Price,Category,Quantity
+                if (tokens.size >= 2) {
+                    items.add(
+                        InventoryEntity(
+                            barcode = tokens[0].trim(),
+                            name = tokens[1].trim(),
+                            price = tokens.getOrNull(2)?.trim() ?: "",
+                            category = tokens.getOrNull(3)?.trim() ?: "",
+                            quantity = tokens.getOrNull(4)?.trim() ?: ""
+                        )
+                    )
+                }
+            }
+            inventoryDao.insertAll(items)
+            reader.close()
+            Result.success(items.size)
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
 }
