@@ -119,7 +119,18 @@ fun HistoryScreen(
                 // Action Icons
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (allScans.isNotEmpty()) {
-                        IconButton(onClick = { /* CSV Export Code will remain here */ }) {
+                        IconButton(onClick = {
+                            Toast.makeText(context, "Preparing CSV File...", Toast.LENGTH_SHORT).show()
+                            coroutineScope.launch {
+                                val csv = scanRepository.exportToCsv(filteredList)
+                                val sendIntent = Intent(Intent.ACTION_SEND).apply {
+                                    putExtra(Intent.EXTRA_TEXT, csv)
+                                    putExtra(Intent.EXTRA_SUBJECT, "ScanVault-Export.csv")
+                                    type = "text/csv"
+                                }
+                                context.startActivity(Intent.createChooser(sendIntent, "Export Scans to CSV"))
+                            }
+                        }) {    
                             Icon(imageVector = Icons.Default.FileDownload, contentDescription = "Export CSV", tint = MaterialTheme.colorScheme.onSurface)
                         }
                         IconButton(onClick = { showClearConfirmDialog = true }) {
