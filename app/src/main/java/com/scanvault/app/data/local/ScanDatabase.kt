@@ -9,6 +9,7 @@ import androidx.room.RoomDatabase
 abstract class ScanDatabase : RoomDatabase() {
 
     abstract fun scanDao(): ScanDao
+    abstract fun inventoryDao(): InventoryDao
 
     companion object {
         @Volatile
