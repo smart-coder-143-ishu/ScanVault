@@ -2,6 +2,7 @@ package com.scanvault.app.ui.screens.history
 
 import android.content.Context
 import android.content.Intent
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -28,6 +29,7 @@ import com.scanvault.app.data.local.ScanRecordEntity
 import com.scanvault.app.data.repository.ScanRepository
 import com.scanvault.app.ui.navigation.Screen
 import kotlinx.coroutines.launch
+
 import java.text.SimpleDateFormat
 import java.util.*
 
