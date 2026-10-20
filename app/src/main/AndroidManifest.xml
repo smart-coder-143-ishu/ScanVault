@@ -19,9 +19,12 @@
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
-        android:icon="@android:drawable/sym_def_app_icon"
+        
+        <!-- YAHAN CHANGES KIYE GAYE HAIN: Ab ye aapke custom logo ko point kar raha hai -->
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        
         android:label="@string/app_name"
-        android:roundIcon="@android:drawable/sym_def_app_icon"
         android:supportsRtl="true"
         android:theme="@style/Theme.ScanVault"
         tools:targetApi="34">
