@@ -195,50 +195,49 @@ fun ProductDetailsScreen(
                     }
 
                         is ProductLookupResult.NotFound -> {
-        var newName by remember { mutableStateOf("") }
-        var newPrice by remember { mutableStateOf("") }
-        var newCategory by remember { mutableStateOf("") }
-        var newQty by remember { mutableStateOf("") }
-
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-        ) {
-            Column(modifier = Modifier.padding(20.dp)) {
-                Text("Product Not Found!", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = MaterialTheme.colorScheme.error)
-                Text("Add this product to your local inventory.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        var newName by remember { mutableStateOf("") }
+                        var newPrice by remember { mutableStateOf("") }
+                        var newCategory by remember { mutableStateOf("") }
+                        var newQty by remember { mutableStateOf("") }
                 
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                OutlinedTextField(value = newName, onValueChange = { newName = it }, label = { Text("Product Name") }, modifier = Modifier.fillMaxWidth())
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(value = newPrice, onValueChange = { newPrice = it }, label = { Text("Price (₹)") }, modifier = Modifier.weight(1f))
-                    OutlinedTextField(value = newQty, onValueChange = { newQty = it }, label = { Text("Quantity/Size") }, modifier = Modifier.weight(1f))
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(value = newCategory, onValueChange = { newCategory = it }, label = { Text("Category") }, modifier = Modifier.fillMaxWidth())
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                Button(
-                    onClick = {
-                        coroutineScope.launch {
-                            productRepository.addProductToInventory(barcode, newName, newPrice, newCategory, newQty)
-                            performLookup() // Re-fetch, it will now find it in local DB!
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                        ) {
+                            Column(modifier = Modifier.padding(20.dp)) {
+                                Text("Product Not Found!", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = MaterialTheme.colorScheme.error)
+                                Text("Add this product to your local inventory.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                
+                                Spacer(modifier = Modifier.height(16.dp))
+                                
+                                OutlinedTextField(value = newName, onValueChange = { newName = it }, label = { Text("Product Name") }, modifier = Modifier.fillMaxWidth())
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    OutlinedTextField(value = newPrice, onValueChange = { newPrice = it }, label = { Text("Price (₹)") }, modifier = Modifier.weight(1f))
+                                    OutlinedTextField(value = newQty, onValueChange = { newQty = it }, label = { Text("Quantity/Size") }, modifier = Modifier.weight(1f))
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+                                OutlinedTextField(value = newCategory, onValueChange = { newCategory = it }, label = { Text("Category") }, modifier = Modifier.fillMaxWidth())
+                                
+                                Spacer(modifier = Modifier.height(16.dp))
+                                
+                                Button(
+                                    onClick = {
+                                        coroutineScope.launch {
+                                            productRepository.addProductToInventory(barcode, newName, newPrice, newCategory, newQty)
+                                            performLookup() // Re-fetch, it will now find it in local DB!
+                                        }
+                                    },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(12.dp)
+                                ) {
+                                    Text("Save to Inventory")
+                                }
+                            }
                         }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text("Save to Inventory")
-                }
-            }
-        }
-    }
-
-
+                    }
+                        
                     is ProductLookupResult.Error -> {
                         Card(
                             modifier = Modifier.fillMaxWidth(),
