@@ -231,66 +231,68 @@ fun ScannerScreen(
             )
 
             // Simulator Test Presets (Bottom Sheet Style)
+            // Premium Simulator Test Presets
             Column(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
-                    .padding(bottom = 90.dp) // Gallery button ke theek upar
-                    .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
-                    .padding(16.dp)
+                    .padding(bottom = 90.dp) 
+                    .background(Color(0xFF0F172A).copy(alpha = 0.9f), RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp))
+                    .padding(horizontal = 20.dp, vertical = 24.dp)
             ) {
                 Text(
                     text = "SIMULATOR TEST PRESETS",
-                    color = Color.Gray,
-                    fontSize = 10.sp,
+                    color = Color.White.copy(alpha = 0.5f),
+                    fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = 8.dp)
+                    letterSpacing = 1.sp,
+                    modifier = Modifier.padding(bottom = 12.dp)
                 )
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    Button(
+                    OutlinedButton(
                         onClick = { 
                             coroutineScope.launch {
                                 val id = scanRepository.saveScan("https://google.com", BarcodeFormatType.QR_CODE)
                                 navController.navigate(Screen.ScanResult.createRoute(id))
                             }
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0369A1)),
                         modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(8.dp),
-                        contentPadding = PaddingValues(0.dp)
-                    ) { Text("Valid HTTPS", fontSize = 10.sp) }
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(1.dp, Color(0xFF38BDF8)),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF38BDF8))
+                    ) { Text("URL", fontSize = 11.sp) }
 
-                    Button(
+                    OutlinedButton(
                         onClick = { 
                             coroutineScope.launch {
                                 val id = scanRepository.saveScan("http://paypal-login-update.com", BarcodeFormatType.QR_CODE)
                                 navController.navigate(Screen.ScanResult.createRoute(id))
                             }
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF9F1239)),
                         modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(8.dp),
-                        contentPadding = PaddingValues(0.dp)
-                    ) { Text("Phishing Alert", fontSize = 10.sp) }
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(1.dp, Color(0xFFFB7185)),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFFB7185))
+                    ) { Text("Fake", fontSize = 11.sp) }
 
-                    Button(
+                    OutlinedButton(
                         onClick = { 
                             coroutineScope.launch {
                                 val id = scanRepository.saveScan("WIFI:S:MyNetwork;T:WPA;P:Password123;;", BarcodeFormatType.QR_CODE)
                                 navController.navigate(Screen.ScanResult.createRoute(id))
                             }
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF065F46)),
                         modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(8.dp),
-                        contentPadding = PaddingValues(0.dp)
-                    ) { Text("Wi-Fi Payload", fontSize = 10.sp) }
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(1.dp, Color(0xFF34D399)),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF34D399))
+                    ) { Text("Wi-Fi", fontSize = 11.sp) }
                 }
             }
-
+            
             // Top Header Overlay
             Row(
                 modifier = Modifier
