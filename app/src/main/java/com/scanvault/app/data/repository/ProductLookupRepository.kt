@@ -6,7 +6,6 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import com.scanvault.app.data.local.InventoryDao
 import com.scanvault.app.data.local.InventoryEntity
-import com.scanvault.app.ui.screens.settings.InventoryDashboardScreen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
