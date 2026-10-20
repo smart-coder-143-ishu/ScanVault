@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" 
+    android:height="108dp"
+    android:viewportWidth="108" 
+    android:viewportHeight="108">
+    
+    <group android:scaleX="2.5" android:scaleY="2.5" android:translateX="24" android:translateY="24">
+        <!-- Outer Scanner Frame (Cyan Color) -->
+        <path android:fillColor="#38BDF8" 
+              android:pathData="M2,2v20h20V2H2z M20,20H4V4h16V20z"/>
+              
+        <!-- Inner QR Dots (White Color) -->
+        <path android:fillColor="#FFFFFF" 
+              android:pathData="M9.5,6.5v3h-3v-3H9.5z M11,5H5v6h6V5z M9.5,14.5v3h-3v-3H9.5z M11,13H5v6h6V13z M17.5,6.5v3h-3v-3H17.5z M19,5h-6v6h6V5z M13,13h1.5v1.5H13V13z M14.5,14.5H16V16h-1.5V14.5z M16,13h1.5v1.5H16V13z M13,16h1.5v1.5H13V16z M17.5,14.5H19V16h-1.5V14.5z M16,17.5h1.5V19H16V17.5z"/>
+    </group>
+</vector>
