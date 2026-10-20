@@ -65,40 +65,48 @@ fun ScanResultScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(text = "Scan Details", fontWeight = FontWeight.SemiBold) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back")
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 4.dp, top = 8.dp, end = 4.dp, bottom = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = { navController.popBackStack() }) {
+                    Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onSurface)
+                }
+                Text(
+                    text = "Scan Details",
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 22.sp,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.weight(1f)
+                )
+                record?.let { rec ->
+                    IconButton(onClick = {
+                        coroutineScope.launch {
+                            scanRepository.toggleFavorite(rec)
+                            record = rec.copy(isFavorite = !rec.isFavorite)
+                        }
+                    }) {
+                        Icon(
+                            imageVector = if (rec.isFavorite) Icons.Default.Favorite else Icons.Outlined.FavoriteBorder,
+                            contentDescription = "Favorite",
+                            tint = if (rec.isFavorite) Color(0xFFF43F5E) else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
-                },
-                actions = {
-                    record?.let { rec ->
-                        IconButton(onClick = {
-                            coroutineScope.launch {
-                                scanRepository.toggleFavorite(rec)
-                                record = rec.copy(isFavorite = !rec.isFavorite)
-                            }
-                        }) {
-                            Icon(
-                                imageVector = if (rec.isFavorite) Icons.Default.Favorite else Icons.Outlined.FavoriteBorder,
-                                contentDescription = "Favorite",
-                                tint = if (rec.isFavorite) Color(0xFFF43F5E) else MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                    IconButton(onClick = {
+                        coroutineScope.launch {
+                            scanRepository.deleteScan(rec.id)
+                            navController.popBackStack()
                         }
-                        IconButton(onClick = {
-                            coroutineScope.launch {
-                                scanRepository.deleteScan(rec.id)
-                                navController.popBackStack()
-                            }
-                        }) {
-                            Icon(imageVector = Icons.Default.DeleteOutline, contentDescription = "Delete")
-                        }
+                    }) {
+                        Icon(imageVector = Icons.Default.DeleteOutline, contentDescription = "Delete", tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
-            )
+            }
         }
     ) { innerPadding ->
+        
         if (record == null) {
             Box(
                 modifier = Modifier
