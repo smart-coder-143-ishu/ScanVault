@@ -22,6 +22,8 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import com.scanvault.app.data.model.BarcodeFormatType
 import java.util.concurrent.Executors
+import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.ui.input.pointer.pointerInput
 
 @Composable
 fun CameraPreview(
@@ -45,7 +47,19 @@ fun CameraPreview(
     }
 
     AndroidView(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier
+            .fillMaxSize()
+            .pointerInput(Unit) {
+                detectTransformGestures { _, _, zoom, _ ->
+                    camera?.cameraInfo?.zoomState?.value?.let { zoomState ->
+                        val currentZoom = zoomState.zoomRatio
+                        val minZoom = zoomState.minZoomRatio
+                        val maxZoom = zoomState.maxZoomRatio
+                        val newZoom = (currentZoom * zoom).coerceIn(minZoom, maxZoom)
+                        camera?.cameraControl?.setZoomRatio(newZoom)
+                    }
+                }
+            },
         factory = { ctx ->
             val previewView = PreviewView(ctx).apply {
                 layoutParams = ViewGroup.LayoutParams(
