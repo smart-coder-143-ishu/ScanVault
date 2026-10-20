@@ -174,6 +174,13 @@ fun ProductDetailsScreen(
                                     color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
                                 )
 
+                                result.price?.let { p ->
+                                    if(p.isNotEmpty()) {
+                                        ProductMetaRow(label = "Price (₹)", value = "₹$p")
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                    }
+                                }
+
                                 result.categories?.let { cat ->
                                     ProductMetaRow(label = "Category", value = cat)
                                     Spacer(modifier = Modifier.height(8.dp))
