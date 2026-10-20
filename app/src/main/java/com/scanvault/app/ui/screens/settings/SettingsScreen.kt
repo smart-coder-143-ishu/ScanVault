@@ -20,6 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.scanvault.app.ui.navigation.Screen
 import com.scanvault.app.data.repository.ScanRepository
 import com.scanvault.app.data.repository.ProductLookupRepository
 import kotlinx.coroutines.launch
