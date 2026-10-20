@@ -7,11 +7,10 @@ import com.scanvault.app.data.repository.ProductLookupRepository
 import com.scanvault.app.data.repository.ScanRepository
 
 class ScanVaultApplication : Application() {
-
     // Lazy initialization of Database and Repositories
     val database: ScanDatabase by lazy { ScanDatabase.getDatabase(this) }
     val scanRepository: ScanRepository by lazy { ScanRepository(database.scanDao()) }
-    val productRepository: ProductLookupRepository by lazy { ProductLookupRepository() }
+    val productRepository: ProductLookupRepository by lazy { ProductLookupRepository(database.inventoryDao()) }
 
     override fun onCreate() {
         super.onCreate()
