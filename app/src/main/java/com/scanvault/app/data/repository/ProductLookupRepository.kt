@@ -144,33 +144,34 @@ fun decodeAadhaarQR(scannedData: String): String {
     return try {
         // NAYA LOGIC: UIDAI Secure QR (Jisme JJ2000 hota hai)
         if (scannedData.startsWith("V") && scannedData.contains("JJ2000")) {
-            // Replacement character se data ko todna
-            val parts = scannedData.split('\uFFFD').map { it.trim() }.filter { it.isNotBlank() }
-            
-            // Photo ke kachre ko rokne ke liye, hum sirf 'XXXXXX' (Aadhaar No) tak ka data lenge
-            val uidIndex = parts.indexOfFirst { it.contains("XXXXXX") }
-            val safeEndIndex = if (uidIndex != -1) uidIndex + 1 else parts.size
-            val readableParts = parts.take(safeEndIndex)
-            
-            // Fixed positions se main data nikalna
+            // Hum sirf unhi hisso ko lenge jinke andar JJ2000 ya photo ka koi tag na ho
+            val cleanedParts = scannedData.split('\uFFFD')
+                .map { part ->
+                    // Faltu machine characters hatao
+                    part.filter { it.isLetterOrDigit() || it.isWhitespace() || it == '-' || it == '/' || it == ',' }
+                }
+                .map { it.trim() }
+                .filter { it.isNotBlank() }
+
+            val uidIndex = cleanedParts.indexOfFirst { it.contains("XXXXXX") }
+            val safeEndIndex = if (uidIndex != -1) uidIndex + 1 else cleanedParts.size
+            val readableParts = cleanedParts.take(safeEndIndex)
+
             val name = readableParts.getOrNull(3) ?: "N/A"
             val dob = readableParts.getOrNull(4) ?: "N/A"
             val rawGender = readableParts.getOrNull(5) ?: "N/A"
-            val gender = if (rawGender == "M") "Male" else if (rawGender == "F") "Female" else rawGender
+            val gender = if (rawGender.contains("M", ignoreCase = true)) "Male" else if (rawGender.contains("F", ignoreCase = true)) "Female" else rawGender
             val careOf = readableParts.getOrNull(6) ?: "N/A"
             val district = readableParts.getOrNull(7) ?: "N/A"
             val pincode = readableParts.getOrNull(9) ?: "N/A"
             val state = readableParts.getOrNull(11) ?: "N/A"
             val maskedUid = readableParts.find { it.contains("XXXXXX") } ?: "N/A"
 
-            // Jo data upar use ho gaya aur jo version numbers hain, unko ek list me daalna
-            val usedItems = setOf(name, dob, rawGender, careOf, district, pincode, state, maskedUid, parts.getOrNull(0), parts.getOrNull(1))
-            
-            // Bacha hua saara extra data (Jaise Village, Tehsil, Ref Number) filter karna
+            val usedItems = setOf(name, dob, rawGender, careOf, district, pincode, state, maskedUid, readableParts.getOrNull(0), readableParts.getOrNull(1))
+
             val extraDataList = readableParts.filter { it !in usedItems && it.isNotBlank() }
             val extraDataStr = if (extraDataList.isNotEmpty()) extraDataList.joinToString(", ") else "None"
 
-            // Ekdum clean professional text format (Without emojis)
             return "AADHAAR DETAILS (DECODED)\n" +
                    "-------------------------\n" +
                    "Name       : $name\n" +
@@ -198,7 +199,7 @@ fun decodeAadhaarQR(scannedData: String): String {
                 val compressedBytes = android.util.Base64.decode(cleanData, android.util.Base64.DEFAULT)
                 decompressGzip(compressedBytes)
             }
-            else -> return scannedData 
+            else -> return scannedData
         }
 
         extractAadhaarDetails(xmlData)
