@@ -142,41 +142,39 @@ class ProductLookupRepository(private val inventoryDao: InventoryDao) {
 
 fun decodeAadhaarQR(scannedData: String): String {
     return try {
-        // Scanner ki taraf se aaye hidden spaces aur 'Enter' (\n) ko hatana (Clean data)
         val cleanData = scannedData.replace("\\s".toRegex(), "")
         
-        // Aadhaar secure QR alag-alag format me ho sakta hai
         val xmlData = when {
-            // Case 1: Raw XML
             cleanData.startsWith("<?xml") || cleanData.contains("<PrintLetterBarcodeData") -> {
                 cleanData
             }
             
-            // Case 2: Purely Numeric (Old Secure QR - yahi aapke paas aa raha hai)
             cleanData.all { it.isDigit() } && cleanData.length > 50 -> {
                 val bigInt = java.math.BigInteger(cleanData)
-                val compressedBytes = bigInt.toByteArray()
+                var compressedBytes = bigInt.toByteArray()
+                
+                // Extra zero-byte removal for GZIP compatibility
+                if (compressedBytes.isNotEmpty() && compressedBytes[0] == 0.toByte()) {
+                    compressedBytes = compressedBytes.copyOfRange(1, compressedBytes.size)
+                }
+                
                 decompressGzip(compressedBytes)
             }
             
-            // Case 3: Base64 encoded (Modern Secure QR)
             cleanData.length > 50 && isBase64(cleanData) -> {
                 val compressedBytes = android.util.Base64.decode(cleanData, android.util.Base64.DEFAULT)
                 decompressGzip(compressedBytes)
             }
             
             else -> {
-                // Agar kuch bhi match nahi hua (jaise Maggi ka barcode), toh waise hi wapas bhej do
                 return scannedData 
             }
         }
 
-        // XML data milne ke baad details extract karein
         extractAadhaarDetails(xmlData)
 
     } catch (e: Exception) {
-        // Agar decoding me error aaye toh raw data dikhayein
-        "Decoding Failed: Format might be unsupported or encrypted.\nRaw Data: ${scannedData.take(50)}..."
+        "Decoding Failed: Format might be unsupported or encrypted.\nRaw Data: ${scannedData.take(20)}..."
     }
 }
 
