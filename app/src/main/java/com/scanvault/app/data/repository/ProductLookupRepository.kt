@@ -142,42 +142,57 @@ class ProductLookupRepository(private val inventoryDao: InventoryDao) {
 
 fun decodeAadhaarQR(scannedData: String): String {
     return try {
-        val cleanData = scannedData.replace("\\s".toRegex(), "")
-        
-        val xmlData = when {
-            cleanData.startsWith("<?xml") || cleanData.contains("<PrintLetterBarcodeData") -> {
-                cleanData
-            }
+        // NAYA LOGIC: UIDAI Secure QR (Jisme JJ2000 hota hai)
+        if (scannedData.startsWith("V") && scannedData.contains("JJ2000")) {
+            // Replacement character se data ko todna
+            val parts = scannedData.split('\uFFFD').map { it.trim() }.filter { it.isNotBlank() }
             
+            // Fixed positions se data nikalna
+            val name = parts.getOrNull(3) ?: "N/A"
+            val dob = parts.getOrNull(4) ?: "N/A"
+            val gender = parts.getOrNull(5)?.let { if (it == "M") "Male" else if (it == "F") "Female" else it } ?: "N/A"
+            val careOf = parts.getOrNull(6) ?: "N/A"
+            val district = parts.getOrNull(7) ?: "N/A"
+            val pincode = parts.getOrNull(9) ?: "N/A"
+            val state = parts.getOrNull(11) ?: "N/A"
+            val maskedUid = parts.find { it.contains("XXXXXX") } ?: "N/A"
+
+            // Emojis hata kar ekdum clean professional text format
+            return "AADHAAR DETAILS (DECODED)\n" +
+                   "-------------------------\n" +
+                   "Name       : $name\n" +
+                   "DOB        : $dob\n" +
+                   "Gender     : $gender\n" +
+                   "C/O        : $careOf\n" +
+                   "Address    : $district, $state - $pincode\n" +
+                   "Aadhaar No : $maskedUid"
+        }
+
+        // PURANA LOGIC: XML aur GZIP format ke liye
+        val cleanData = scannedData.replace("\\s".toRegex(), "")
+        val xmlData = when {
+            cleanData.startsWith("<?xml") || cleanData.contains("<PrintLetterBarcodeData") -> cleanData
             cleanData.all { it.isDigit() } && cleanData.length > 50 -> {
                 val bigInt = java.math.BigInteger(cleanData)
                 var compressedBytes = bigInt.toByteArray()
-                
-                // Extra zero-byte removal for GZIP compatibility
                 if (compressedBytes.isNotEmpty() && compressedBytes[0] == 0.toByte()) {
                     compressedBytes = compressedBytes.copyOfRange(1, compressedBytes.size)
                 }
-                
                 decompressGzip(compressedBytes)
             }
-            
             cleanData.length > 50 && isBase64(cleanData) -> {
                 val compressedBytes = android.util.Base64.decode(cleanData, android.util.Base64.DEFAULT)
                 decompressGzip(compressedBytes)
             }
-            
-            else -> {
-                return scannedData 
-            }
+            else -> return scannedData 
         }
 
         extractAadhaarDetails(xmlData)
 
     } catch (e: Exception) {
-        "Decoding Failed: Format might be unsupported or encrypted.\nRaw Data: ${scannedData.take(20)}..."
+        "Decoding Failed: Format might be unsupported.\nRaw Data: ${scannedData.take(20)}..."
     }
 }
-
 
 // Helper function: GZIP decompress karne ke liye
 private fun decompressGzip(compressed: ByteArray): String {
