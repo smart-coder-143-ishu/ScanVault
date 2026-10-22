@@ -147,17 +147,30 @@ fun decodeAadhaarQR(scannedData: String): String {
             // Replacement character se data ko todna
             val parts = scannedData.split('\uFFFD').map { it.trim() }.filter { it.isNotBlank() }
             
-            // Fixed positions se data nikalna
-            val name = parts.getOrNull(3) ?: "N/A"
-            val dob = parts.getOrNull(4) ?: "N/A"
-            val gender = parts.getOrNull(5)?.let { if (it == "M") "Male" else if (it == "F") "Female" else it } ?: "N/A"
-            val careOf = parts.getOrNull(6) ?: "N/A"
-            val district = parts.getOrNull(7) ?: "N/A"
-            val pincode = parts.getOrNull(9) ?: "N/A"
-            val state = parts.getOrNull(11) ?: "N/A"
-            val maskedUid = parts.find { it.contains("XXXXXX") } ?: "N/A"
+            // Photo ke kachre ko rokne ke liye, hum sirf 'XXXXXX' (Aadhaar No) tak ka data lenge
+            val uidIndex = parts.indexOfFirst { it.contains("XXXXXX") }
+            val safeEndIndex = if (uidIndex != -1) uidIndex + 1 else parts.size
+            val readableParts = parts.take(safeEndIndex)
+            
+            // Fixed positions se main data nikalna
+            val name = readableParts.getOrNull(3) ?: "N/A"
+            val dob = readableParts.getOrNull(4) ?: "N/A"
+            val rawGender = readableParts.getOrNull(5) ?: "N/A"
+            val gender = if (rawGender == "M") "Male" else if (rawGender == "F") "Female" else rawGender
+            val careOf = readableParts.getOrNull(6) ?: "N/A"
+            val district = readableParts.getOrNull(7) ?: "N/A"
+            val pincode = readableParts.getOrNull(9) ?: "N/A"
+            val state = readableParts.getOrNull(11) ?: "N/A"
+            val maskedUid = readableParts.find { it.contains("XXXXXX") } ?: "N/A"
 
-            // Emojis hata kar ekdum clean professional text format
+            // Jo data upar use ho gaya aur jo version numbers hain, unko ek list me daalna
+            val usedItems = setOf(name, dob, rawGender, careOf, district, pincode, state, maskedUid, parts.getOrNull(0), parts.getOrNull(1))
+            
+            // Bacha hua saara extra data (Jaise Village, Tehsil, Ref Number) filter karna
+            val extraDataList = readableParts.filter { it !in usedItems && it.isNotBlank() }
+            val extraDataStr = if (extraDataList.isNotEmpty()) extraDataList.joinToString(", ") else "None"
+
+            // Ekdum clean professional text format (Without emojis)
             return "AADHAAR DETAILS (DECODED)\n" +
                    "-------------------------\n" +
                    "Name       : $name\n" +
@@ -165,7 +178,8 @@ fun decodeAadhaarQR(scannedData: String): String {
                    "Gender     : $gender\n" +
                    "C/O        : $careOf\n" +
                    "Address    : $district, $state - $pincode\n" +
-                   "Aadhaar No : $maskedUid"
+                   "Aadhaar No : $maskedUid\n" +
+                   "Other Info : $extraDataStr"
         }
 
         // PURANA LOGIC: XML aur GZIP format ke liye
@@ -193,6 +207,7 @@ fun decodeAadhaarQR(scannedData: String): String {
         "Decoding Failed: Format might be unsupported.\nRaw Data: ${scannedData.take(20)}..."
     }
 }
+
 
 // Helper function: GZIP decompress karne ke liye
 private fun decompressGzip(compressed: ByteArray): String {
