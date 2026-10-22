@@ -142,28 +142,31 @@ class ProductLookupRepository(private val inventoryDao: InventoryDao) {
 
 fun decodeAadhaarQR(scannedData: String): String {
     return try {
-        // Aadhaar secure QR alag-alag format me ho sakta hai (numeric, base64, ya raw XML)
+        // Scanner ki taraf se aaye hidden spaces aur 'Enter' (\n) ko hatana (Clean data)
+        val cleanData = scannedData.replace("\\s".toRegex(), "")
+        
+        // Aadhaar secure QR alag-alag format me ho sakta hai
         val xmlData = when {
-            // Case 1: Agar raw XML pehle se hi hai (kuch purane QR codes me hota hai)
-            scannedData.startsWith("<?xml") || scannedData.contains("<PrintLetterBarcodeData") -> {
-                scannedData
+            // Case 1: Raw XML
+            cleanData.startsWith("<?xml") || cleanData.contains("<PrintLetterBarcodeData") -> {
+                cleanData
             }
             
-            // Case 2: Agar purely Numeric hai (Old Secure QR - bahut lamba number)
-            scannedData.all { it.isDigit() } && scannedData.length > 50 -> {
-                val bigInt = BigInteger(scannedData)
+            // Case 2: Purely Numeric (Old Secure QR - yahi aapke paas aa raha hai)
+            cleanData.all { it.isDigit() } && cleanData.length > 50 -> {
+                val bigInt = java.math.BigInteger(cleanData)
                 val compressedBytes = bigInt.toByteArray()
                 decompressGzip(compressedBytes)
             }
             
-            // Case 3: Agar Base64 encoded hai (Modern Secure QR)
-            scannedData.length > 50 && isBase64(scannedData) -> {
-                val compressedBytes = Base64.decode(scannedData, Base64.DEFAULT)
+            // Case 3: Base64 encoded (Modern Secure QR)
+            cleanData.length > 50 && isBase64(cleanData) -> {
+                val compressedBytes = android.util.Base64.decode(cleanData, android.util.Base64.DEFAULT)
                 decompressGzip(compressedBytes)
             }
             
             else -> {
-                // Agar kuch bhi match nahi hua, toh waise hi wapas bhej do
+                // Agar kuch bhi match nahi hua (jaise Maggi ka barcode), toh waise hi wapas bhej do
                 return scannedData 
             }
         }
@@ -173,9 +176,10 @@ fun decodeAadhaarQR(scannedData: String): String {
 
     } catch (e: Exception) {
         // Agar decoding me error aaye toh raw data dikhayein
-        "Decoding Failed: Aadhaar format might be unsupported or encrypted.\nRaw Data Snippet: ${scannedData.take(50)}..."
+        "Decoding Failed: Format might be unsupported or encrypted.\nRaw Data: ${scannedData.take(50)}..."
     }
 }
+
 
 // Helper function: GZIP decompress karne ke liye
 private fun decompressGzip(compressed: ByteArray): String {
