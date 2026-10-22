@@ -2,6 +2,7 @@ package com.scanvault.app.data.repository
 
 import android.content.Context
 import android.net.Uri
+import android.util.Base64
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import com.scanvault.app.data.local.InventoryDao
@@ -10,9 +11,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import org.xmlpull.v1.XmlPullParserFactory
 import java.io.BufferedReader
+import java.io.ByteArrayInputStream
 import java.io.InputStreamReader
+import java.io.StringReader
+import java.math.BigInteger
 import java.util.concurrent.TimeUnit
+import java.util.zip.GZIPInputStream
 
 sealed class ProductLookupResult {
     data class Success(
@@ -21,7 +27,7 @@ sealed class ProductLookupResult {
         val brand: String? = null,
         val categories: String? = null,
         val quantity: String? = null,
-        val price: String? = null, // Naya field local DB ke liye
+        val price: String? = null,
         val imageUrl: String? = null,
         val ingredientsSummary: String? = null,
         val sourceDatabase: String = "Open Food Facts"
@@ -127,5 +133,98 @@ class ProductLookupRepository(private val inventoryDao: InventoryDao) {
 
     suspend fun deleteFromInventory(barcode: String) = withContext(Dispatchers.IO) {
         inventoryDao.deleteItemByBarcode(barcode)
+    }
+}
+
+// ==========================================
+// AADHAAR DECODER FUNCTIONS
+// ==========================================
+
+fun decodeAadhaarQR(scannedData: String): String {
+    return try {
+        // Aadhaar secure QR alag-alag format me ho sakta hai (numeric, base64, ya raw XML)
+        val xmlData = when {
+            // Case 1: Agar raw XML pehle se hi hai (kuch purane QR codes me hota hai)
+            scannedData.startsWith("<?xml") || scannedData.contains("<PrintLetterBarcodeData") -> {
+                scannedData
+            }
+            
+            // Case 2: Agar purely Numeric hai (Old Secure QR - bahut lamba number)
+            scannedData.all { it.isDigit() } && scannedData.length > 50 -> {
+                val bigInt = BigInteger(scannedData)
+                val compressedBytes = bigInt.toByteArray()
+                decompressGzip(compressedBytes)
+            }
+            
+            // Case 3: Agar Base64 encoded hai (Modern Secure QR)
+            scannedData.length > 50 && isBase64(scannedData) -> {
+                val compressedBytes = Base64.decode(scannedData, Base64.DEFAULT)
+                decompressGzip(compressedBytes)
+            }
+            
+            else -> {
+                // Agar kuch bhi match nahi hua, toh waise hi wapas bhej do
+                return scannedData 
+            }
+        }
+
+        // XML data milne ke baad details extract karein
+        extractAadhaarDetails(xmlData)
+
+    } catch (e: Exception) {
+        // Agar decoding me error aaye toh raw data dikhayein
+        "Decoding Failed: Aadhaar format might be unsupported or encrypted.\nRaw Data Snippet: ${scannedData.take(50)}..."
+    }
+}
+
+// Helper function: GZIP decompress karne ke liye
+private fun decompressGzip(compressed: ByteArray): String {
+    return try {
+        val gis = GZIPInputStream(ByteArrayInputStream(compressed))
+        val decompressedBytes = gis.readBytes()
+        String(decompressedBytes, Charsets.UTF_8)
+    } catch (e: Exception) {
+        // Agar GZIP nahi hai, toh as a string try karein
+        String(compressed, Charsets.UTF_8)
+    }
+}
+
+// Helper function: Check karein ki string Base64 hai ya nahi
+private fun isBase64(str: String): Boolean {
+    return str.matches(Regex("^[a-zA-Z0-9+/]*={0,2}$"))
+}
+
+private fun extractAadhaarDetails(xml: String): String {
+    // Basic extraction logic: UIDAI ke XML tag se Naam aur Address nikalna
+    try {
+        val factory = XmlPullParserFactory.newInstance()
+        val parser = factory.newPullParser()
+        parser.setInput(StringReader(xml))
+        
+        var eventType = parser.eventType
+        var result = "Aadhaar Card Details:\n"
+        var dataFound = false
+        
+        while (eventType != org.xmlpull.v1.XmlPullParser.END_DOCUMENT) {
+            if (eventType == org.xmlpull.v1.XmlPullParser.START_TAG && parser.name == "PrintLetterBarcodeData") {
+                dataFound = true
+                val uid = parser.getAttributeValue(null, "uid")?.let { "**** **** ${it.takeLast(4)}" } ?: "N/A"
+                val name = parser.getAttributeValue(null, "name") ?: "N/A"
+                val gender = parser.getAttributeValue(null, "gender") ?: "N/A"
+                val yob = parser.getAttributeValue(null, "yob") ?: "N/A"
+                val dist = parser.getAttributeValue(null, "dist") ?: "N/A"
+                val state = parser.getAttributeValue(null, "state") ?: "N/A"
+                val pc = parser.getAttributeValue(null, "pc") ?: "N/A" // Pincode
+                
+                result += "\nUID (Masked): $uid\nName: $name\nGender: $gender\nYear of Birth: $yob\nLocation: $dist, $state - $pc"
+                return result
+            }
+            eventType = parser.next()
+        }
+        
+        return if (dataFound) result else "Decoded XML (Tags missing or Encrypted):\n$xml"
+        
+    } catch (e: Exception) {
+        return "Decoded Data:\n$xml"
     }
 }
