@@ -172,7 +172,7 @@ fun ScanResultScreen(
                         )
                     }
                 }
-
+                
                 // Dynamic Content Analyzer Cards
                 when (content) {
                     is ScanContent.Url -> {
@@ -320,7 +320,6 @@ fun UrlAnalyzerCard(urlContent: ScanContent.Url, context: Context) {
                 maxLines = 3
             )
 
-            // Security Warning Callout
             if (urlContent.warningMessage != null) {
                 Spacer(modifier = Modifier.height(14.dp))
                 Surface(
@@ -348,7 +347,7 @@ fun UrlAnalyzerCard(urlContent: ScanContent.Url, context: Context) {
                     }
                 }
             }
-
+            
             Spacer(modifier = Modifier.height(16.dp))
             Button(
                 onClick = {
@@ -418,6 +417,216 @@ fun WifiAnalyzerCard(wifiContent: ScanContent.Wifi, context: Context) {
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("Copy Wi-Fi Password")
             }
+        }
+    }
+}
+
+@Composable
+fun ProductAnalyzerCard(
+    productContent: ScanContent.Product,
+    navController: NavController
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = CardDefaults.outlinedCardBorder()
+    ) {
+        Column(modifier = Modifier.padding(18.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Retail Product Barcode",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = if (productContent.isChecksumValid) Color(0xFF10B981).copy(alpha = 0.15f) else Color(0xFFF43F5E).copy(alpha = 0.15f)
+                ) {
+                    Text(
+                        text = if (productContent.isChecksumValid) "CHECKSUM VALID" else "CHECKSUM INVALID",
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (productContent.isChecksumValid) Color(0xFF10B981) else Color(0xFFF43F5E),
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = productContent.barcode,
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = FontFamily.Monospace,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+
+            Spacer(modifier = Modifier.height(14.dp))
+            Button(
+                onClick = {
+                    navController.navigate(Screen.ProductDetails.createRoute(productContent.barcode))
+                },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Icon(Icons.Default.ShoppingBag, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Lookup Product Details")
+            }
+        }
+    }
+}
+
+@Composable
+fun ContactAnalyzerCard(contactContent: ScanContent.Contact, context: Context) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = CardDefaults.outlinedCardBorder()
+    ) {
+        Column(modifier = Modifier.padding(18.dp)) {
+            Text(
+                text = "Contact Card",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                text = contactContent.name,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+
+            contactContent.phone?.let { p ->
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(text = "Phone: $p", fontSize = 13.sp)
+            }
+            contactContent.email?.let { e ->
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(text = "Email: $e", fontSize = 13.sp)
+            }
+            contactContent.organization?.let { o ->
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(text = "Org: $o", fontSize = 13.sp)
+            }
+        }
+    }
+}
+
+@Composable
+fun PhoneAnalyzerCard(phoneContent: ScanContent.Phone, context: Context) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = CardDefaults.outlinedCardBorder()
+    ) {
+        Column(modifier = Modifier.padding(18.dp)) {
+            Text(
+                text = "Telephone Number",
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                text = phoneContent.phoneNumber,
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(14.dp))
+            Button(
+                onClick = {
+                    val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:${phoneContent.phoneNumber}"))
+                    context.startActivity(intent)
+                },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Icon(Icons.Default.Phone, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Dial Number")
+            }
+        }
+    }
+}
+
+@Composable
+fun EmailAnalyzerCard(emailContent: ScanContent.Email, context: Context) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = CardDefaults.outlinedCardBorder()
+    ) {
+        Column(modifier = Modifier.padding(18.dp)) {
+            Text(text = "Email Message", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(text = emailContent.recipient, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            emailContent.subject?.let {
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(text = "Subject: $it", fontSize = 13.sp)
+            }
+            Spacer(modifier = Modifier.height(14.dp))
+            Button(
+                onClick = {
+                    val intent = Intent(Intent.ACTION_SENDTO).apply {
+                        data = Uri.parse("mailto:${emailContent.recipient}")
+                        emailContent.subject?.let { putExtra(Intent.EXTRA_SUBJECT, it) }
+                        emailContent.body?.let { putExtra(Intent.EXTRA_TEXT, it) }
+                    }
+                    context.startActivity(intent)
+                },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Icon(Icons.Default.Email, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Compose Email")
+            }
+        }
+    }
+}
+
+@Composable
+fun PlainTextViewerCard(rawValue: String) {
+    // यहाँ हमने रिपॉजिटरी से डिकोडर फ़ंक्शन को कॉल किया है
+    val decodedText = com.scanvault.app.data.repository.decodeAadhaarQR(rawValue)
+    
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = CardDefaults.outlinedCardBorder()
+    ) {
+        Column(modifier = Modifier.padding(18.dp)) {
+            Text(
+                // अगर डेटा डिकोड हो गया है तो टाइटल बदलें
+                text = if (decodedText != rawValue && decodedText.startsWith("Aadhaar")) 
+                    "Aadhaar Details" 
+                else 
+                    "Text Content (${rawValue.length} characters)",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                // यहाँ हम डिकोड किया हुआ टेक्स्ट दिखा रहे हैं
+                text = decodedText,
+                // अगर डिकोड नहीं हुआ और बहुत लंबा है तो फॉन्ट छोटा रखें
+                fontSize = if (decodedText == rawValue && rawValue.length > 50) 12.sp else 15.sp,
+                lineHeight = 22.sp,
+                color = MaterialTheme.colorScheme.onSurface
+            )
         }
     }
 }
