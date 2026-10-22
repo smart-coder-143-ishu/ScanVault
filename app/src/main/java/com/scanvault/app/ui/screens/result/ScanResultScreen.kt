@@ -187,6 +187,8 @@ fun ScanResultScreen(
                         is ScanContent.Contact -> ContactAnalyzerCard(contactContent = content, context = context)
                         is ScanContent.Phone -> PhoneAnalyzerCard(phoneContent = content, context = context)
                         is ScanContent.Email -> EmailAnalyzerCard(emailContent = content, context = context)
+                        is ScanContent.Sms -> SmsAnalyzerCard(smsContent = content, context = context)
+                        is ScanContent.Geo -> GeoAnalyzerCard(geoContent = content, context = context)
                         is ScanContent.PlainText, null -> PlainTextViewerCard(rawValue = currentRecord.rawValue)
                     }
                 }
@@ -720,6 +722,85 @@ fun EmailAnalyzerCard(emailContent: ScanContent.Email, context: Context) {
                 Icon(Icons.Default.Email, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("Compose Email")
+            }
+        }
+    }
+}
+
+@Composable
+fun SmsAnalyzerCard(smsContent: ScanContent.Sms, context: Context) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = CardDefaults.outlinedCardBorder()
+    ) {
+        Column(modifier = Modifier.padding(18.dp)) {
+            Text(text = "SMS Message", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(text = smsContent.recipient, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            smsContent.messageBody?.takeIf { it.isNotBlank() }?.let { body ->
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(text = "Message: $body", fontSize = 13.sp)
+            }
+            Spacer(modifier = Modifier.height(14.dp))
+            Button(
+                onClick = {
+                    val intent = Intent(Intent.ACTION_SENDTO).apply {
+                        data = Uri.parse("smsto:${smsContent.recipient}")
+                        smsContent.messageBody?.let { putExtra("sms_body", it) }
+                    }
+                    context.startActivity(intent)
+                },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Icon(Icons.Default.Sms, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Compose SMS")
+            }
+        }
+    }
+}
+
+@Composable
+fun GeoAnalyzerCard(geoContent: ScanContent.Geo, context: Context) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = CardDefaults.outlinedCardBorder()
+    ) {
+        Column(modifier = Modifier.padding(18.dp)) {
+            Text(text = "Geographic Location", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                text = "${geoContent.latitude}, ${geoContent.longitude}",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = FontFamily.Monospace
+            )
+            geoContent.query?.takeIf { it.isNotBlank() }?.let { q ->
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(text = "Query: $q", fontSize = 13.sp)
+            }
+            Spacer(modifier = Modifier.height(14.dp))
+            Button(
+                onClick = {
+                    val label = geoContent.query?.takeIf { it.isNotBlank() }?.let { "(" + Uri.encode(it) + ")" } ?: ""
+                    val uri = Uri.parse("geo:${geoContent.latitude},${geoContent.longitude}?q=${geoContent.latitude},${geoContent.longitude}$label")
+                    try {
+                        context.startActivity(Intent(Intent.ACTION_VIEW, uri))
+                    } catch (_: Exception) {
+                        Toast.makeText(context, "No maps app found", Toast.LENGTH_SHORT).show()
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Icon(Icons.Default.Map, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Open in Maps")
             }
         }
     }
