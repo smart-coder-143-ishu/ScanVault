@@ -7,10 +7,8 @@ import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -20,8 +18,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -32,7 +30,10 @@ import com.scanvault.app.data.local.ScanRecordEntity
 import com.scanvault.app.data.model.BarcodeFormatType
 import com.scanvault.app.data.model.ScanContent
 import com.scanvault.app.data.parser.BarcodePayloadParser
+import com.scanvault.app.data.repository.AadhaarData
 import com.scanvault.app.data.repository.ScanRepository
+import com.scanvault.app.data.repository.decodeAadhaarQR
+import com.scanvault.app.data.repository.parseAadhaarDataObject
 import com.scanvault.app.ui.navigation.Screen
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -49,11 +50,13 @@ fun ScanResultScreen(
     val coroutineScope = rememberCoroutineScope()
     var record by remember { mutableStateOf<ScanRecordEntity?>(null) }
     var parsedContent by remember { mutableStateOf<ScanContent?>(null) }
+    var aadhaarData by remember { mutableStateOf<AadhaarData?>(null) }
 
     LaunchedEffect(recordId) {
         val loaded = scanRepository.getScanById(recordId)
         record = loaded
         if (loaded != null) {
+            aadhaarData = parseAadhaarDataObject(loaded.rawValue)
             val formatType = try {
                 BarcodeFormatType.valueOf(loaded.format)
             } catch (_: Exception) {
@@ -75,7 +78,7 @@ fun ScanResultScreen(
                     Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onSurface)
                 }
                 Text(
-                    text = "Scan Details",
+                    text = if (aadhaarData != null) "Aadhaar Verification" else "Scan Details",
                     fontWeight = FontWeight.ExtraBold,
                     fontSize = 22.sp,
                     color = MaterialTheme.colorScheme.primary,
@@ -106,7 +109,6 @@ fun ScanResultScreen(
             }
         }
     ) { innerPadding ->
-        
         if (record == null) {
             Box(
                 modifier = Modifier
@@ -119,6 +121,7 @@ fun ScanResultScreen(
         } else {
             val currentRecord = record!!
             val content = parsedContent
+            val detectedAadhaar = aadhaarData
             val dateFormat = SimpleDateFormat("EEEE, MMMM d, yyyy • HH:mm:ss", Locale.getDefault())
 
             Column(
@@ -145,13 +148,13 @@ fun ScanResultScreen(
                         ) {
                             Surface(
                                 shape = RoundedCornerShape(8.dp),
-                                color = MaterialTheme.colorScheme.primaryContainer
+                                color = if (detectedAadhaar != null) Color(0xFF10B981).copy(alpha = 0.15f) else MaterialTheme.colorScheme.primaryContainer
                             ) {
                                 Text(
-                                    text = currentRecord.category.uppercase(),
+                                    text = if (detectedAadhaar != null) "VERIFIED UIDAI PAYLOAD" else currentRecord.category.uppercase(),
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    color = if (detectedAadhaar != null) Color(0xFF10B981) else MaterialTheme.colorScheme.onPrimaryContainer,
                                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                                 )
                             }
@@ -173,39 +176,23 @@ fun ScanResultScreen(
                     }
                 }
 
-                // Dynamic Content Analyzer Cards
-                when (content) {
-                    is ScanContent.Url -> {
-                        UrlAnalyzerCard(urlContent = content, context = context)
-                    }
-                    is ScanContent.Wifi -> {
-                        WifiAnalyzerCard(wifiContent = content, context = context)
-                    }
-                    is ScanContent.Product -> {
-                        ProductAnalyzerCard(
-                            productContent = content,
-                            navController = navController
-                        )
-                    }
-                    is ScanContent.Contact -> {
-                        ContactAnalyzerCard(contactContent = content, context = context)
-                    }
-                    is ScanContent.Phone -> {
-                        PhoneAnalyzerCard(phoneContent = content, context = context)
-                    }
-                    is ScanContent.Email -> {
-                        EmailAnalyzerCard(emailContent = content, context = context)
-                    }
-                    is ScanContent.PlainText, null -> {
-                        // Yहाँ हमने आधार डिकोडर को लागू किया है
-                        PlainTextViewerCard(rawValue = currentRecord.rawValue)
-                    }
-                    else -> {
-                        PlainTextViewerCard(rawValue = currentRecord.rawValue)
+                // If Aadhaar is detected, render Premium Aadhaar Card; else standard analyzer cards
+                if (detectedAadhaar != null) {
+                    PremiumAadhaarCard(data = detectedAadhaar)
+                } else {
+                    when (content) {
+                        is ScanContent.Url -> UrlAnalyzerCard(urlContent = content, context = context)
+                        is ScanContent.Wifi -> WifiAnalyzerCard(wifiContent = content, context = context)
+                        is ScanContent.Product -> ProductAnalyzerCard(productContent = content, navController = navController)
+                        is ScanContent.Contact -> ContactAnalyzerCard(contactContent = content, context = context)
+                        is ScanContent.Phone -> PhoneAnalyzerCard(phoneContent = content, context = context)
+                        is ScanContent.Email -> EmailAnalyzerCard(emailContent = content, context = context)
+                        is ScanContent.PlainText, null -> PlainTextViewerCard(rawValue = currentRecord.rawValue)
                     }
                 }
 
-                // Raw Decoded Value Card
+                // Raw Payload / Summary Card (Hides 3000-digit garbage if Aadhaar is decoded)
+                val copyableText = if (detectedAadhaar != null) decodeAadhaarQR(currentRecord.rawValue) else currentRecord.rawValue
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
@@ -215,14 +202,14 @@ fun ScanResultScreen(
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(
-                            text = "Raw Decoded Payload",
+                            text = if (detectedAadhaar != null) "Formatted Text Summary" else "Raw Decoded Payload",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
-                            text = currentRecord.rawValue,
+                            text = copyableText,
                             fontSize = 13.sp,
                             fontFamily = FontFamily.Monospace,
                             color = MaterialTheme.colorScheme.onSurface
@@ -230,7 +217,7 @@ fun ScanResultScreen(
                     }
                 }
 
-                // Quick Action Buttons
+                // Quick Action Buttons (Copies formatted Aadhaar text instead of raw digits!)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -238,7 +225,7 @@ fun ScanResultScreen(
                     Button(
                         onClick = {
                             val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                            clipboard.setPrimaryClip(ClipData.newPlainText("ScanVault Data", currentRecord.rawValue))
+                            clipboard.setPrimaryClip(ClipData.newPlainText("ScanVault Data", copyableText))
                             Toast.makeText(context, "Copied to clipboard", Toast.LENGTH_SHORT).show()
                         },
                         modifier = Modifier.weight(1f),
@@ -252,7 +239,7 @@ fun ScanResultScreen(
                     OutlinedButton(
                         onClick = {
                             val sendIntent = Intent(Intent.ACTION_SEND).apply {
-                                putExtra(Intent.EXTRA_TEXT, currentRecord.rawValue)
+                                putExtra(Intent.EXTRA_TEXT, copyableText)
                                 type = "text/plain"
                             }
                             context.startActivity(Intent.createChooser(sendIntent, "Share Scanned Code"))
@@ -266,6 +253,148 @@ fun ScanResultScreen(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun PremiumAadhaarCard(data: AadhaarData) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = CardDefaults.outlinedCardBorder()
+    ) {
+        Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.VerifiedUser,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(26.dp)
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Column {
+                        Text(
+                            text = data.name,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = data.qrType,
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
+            }
+
+            Divider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Box(modifier = Modifier.weight(1f)) {
+                    AadhaarInfoRow(icon = Icons.Default.Badge, label = "Aadhaar Number", value = data.maskedUid)
+                }
+                Box(modifier = Modifier.weight(1f)) {
+                    AadhaarInfoRow(icon = Icons.Default.Event, label = "Date of Birth", value = data.dob)
+                }
+            }
+
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Box(modifier = Modifier.weight(1f)) {
+                    AadhaarInfoRow(icon = Icons.Default.Person, label = "Gender", value = data.gender)
+                }
+                Box(modifier = Modifier.weight(1f)) {
+                    AadhaarInfoRow(icon = Icons.Default.FamilyRestroom, label = "Care Of (Guardian)", value = data.careOf)
+                }
+            }
+
+            val fullAddress = listOf(
+                data.house, data.street, data.landmark, data.locality,
+                data.vtc, data.postOffice, data.subDistrict, data.district, data.state
+            ).map { it.trim() }.filter { it.isNotEmpty() && it != "N/A" }.distinct().joinToString(", ")
+
+            AadhaarInfoRow(
+                icon = Icons.Default.LocationOn,
+                label = "Complete Address",
+                value = if (fullAddress.isNotEmpty()) "$fullAddress - ${data.pincode}" else "${data.district}, ${data.state} - ${data.pincode}"
+            )
+
+            if (data.extraInfo.isNotEmpty() && data.extraInfo != "None") {
+                AadhaarInfoRow(
+                    icon = Icons.Default.Info,
+                    label = "Other Locality Details (VTC / PO / Tehsil)",
+                    value = data.extraInfo
+                )
+            }
+
+            if (data.referenceId.isNotEmpty() && data.referenceId != "N/A") {
+                AadhaarInfoRow(
+                    icon = Icons.Default.Tag,
+                    label = "UIDAI Reference ID",
+                    value = data.referenceId
+                )
+            }
+
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(10.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+            ) {
+                Row(
+                    modifier = Modifier.padding(10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.PhotoCamera,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = if (data.hasEmbeddedPhoto) "JPEG-2000 Biometric Photo stream detected & filtered cleanly" else "Standard XML QR (No Embedded Photo Stream)",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun AadhaarInfoRow(icon: ImageVector, label: String, value: String) {
+    Row(verticalAlignment = Alignment.Top) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier
+                .size(18.dp)
+                .padding(top = 2.dp)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Column {
+            Text(
+                text = label,
+                fontSize = 11.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontWeight = FontWeight.Medium
+            )
+            Text(
+                text = value.ifEmpty { "N/A" },
+                fontSize = 14.sp,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontWeight = FontWeight.SemiBold
+            )
         }
     }
 }
@@ -598,9 +727,7 @@ fun EmailAnalyzerCard(emailContent: ScanContent.Email, context: Context) {
 
 @Composable
 fun PlainTextViewerCard(rawValue: String) {
-    // यहाँ हमने रिपॉजिटरी से डिकोडर फ़ंक्शन को कॉल किया है
-    val decodedText = com.scanvault.app.data.repository.decodeAadhaarQR(rawValue)
-    
+    val decodedText = decodeAadhaarQR(rawValue)
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
@@ -609,22 +736,16 @@ fun PlainTextViewerCard(rawValue: String) {
     ) {
         Column(modifier = Modifier.padding(18.dp)) {
             Text(
-                // अगर डेटा डिकोड हो गया है तो टाइटल बदलें
-                text = if (decodedText != rawValue && decodedText.startsWith("Aadhaar")) 
-                    "Aadhaar Details" 
-                else 
-                    "Text Content (${rawValue.length} characters)",
+                text = "Text Content (${decodedText.length} characters)",
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Medium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                // यहाँ हम डिकोड किया हुआ टेक्स्ट दिखा रहे हैं
                 text = decodedText,
-                // अगर डिकोड नहीं हुआ और बहुत लंबा है तो फॉन्ट छोटा रखें
-                fontSize = if (decodedText == rawValue && rawValue.length > 50) 12.sp else 15.sp,
-                lineHeight = 22.sp,
+                fontSize = 14.sp,
+                lineHeight = 21.sp,
                 color = MaterialTheme.colorScheme.onSurface
             )
         }
