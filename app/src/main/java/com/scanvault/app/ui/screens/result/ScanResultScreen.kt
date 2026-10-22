@@ -172,7 +172,7 @@ fun ScanResultScreen(
                         )
                     }
                 }
-                
+
                 // Dynamic Content Analyzer Cards
                 when (content) {
                     is ScanContent.Url -> {
@@ -347,7 +347,7 @@ fun UrlAnalyzerCard(urlContent: ScanContent.Url, context: Context) {
                     }
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
             Button(
                 onClick = {
