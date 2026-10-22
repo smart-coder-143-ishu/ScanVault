@@ -102,13 +102,18 @@ fun ProductDetailsScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Spacer(modifier = Modifier.height(4.dp))
+                                                
                         Text(
-                            text = barcode,
-                            fontSize = 18.sp,
+                            // Yahan humne function call kiya hai jisse lamba number decode ho jayega
+                            text = com.scanvault.app.data.repository.decodeAadhaarQR(barcode),
+                            
+                            // Lamba Aadhaar data ho toh font chhota kar dega, warna normal 18sp rahega
+                            fontSize = if (barcode.length > 50) 13.sp else 18.sp, 
                             fontWeight = FontWeight.Bold,
                             fontFamily = FontFamily.Monospace,
                             color = MaterialTheme.colorScheme.onSurface
                         )
+
                     }
 
                     Surface(
